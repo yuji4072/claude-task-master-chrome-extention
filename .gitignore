@@ -9,8 +9,9 @@ dev-debug.log
 # Dependency directories
 /node_modules
 
-# build
+# build artifacts
 /dist
+*.zip
 
 # Environment variables
 .env

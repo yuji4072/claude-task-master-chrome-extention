@@ -12,13 +12,12 @@ async function getCacheDuration() {
  * @returns {Promise<{data: Object}|{error: string}>} A promise that resolves to an object with either the task data or an error key.
  */
 export async function fetchTasks({ force = false } = {}) {
-  const pathParts = window.location.pathname.split('/').filter(Boolean);
-  if (pathParts.length < 2) {
+  const repoMeta = document.querySelector('meta[name="octolytics-dimension-repository_nwo"]');
+  if (!repoMeta) {
     return { error: 'not_repo' };
   }
+  const [owner, repo] = repoMeta.content.split('/');
   
-  const owner = pathParts[0];
-  const repo = pathParts[1];
   const cacheKey = `tasktab-${owner}-${repo}`;
   const cacheDurationMs = await getCacheDuration();
 
@@ -39,7 +38,7 @@ export async function fetchTasks({ force = false } = {}) {
   }
 
   const defaultBranch = 'main'; 
-  const taskJsonUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/.task.json`;
+  const taskJsonUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/.taskmaster/tasks/tasks.json`;
 
   try {
     const response = await fetch(taskJsonUrl);
