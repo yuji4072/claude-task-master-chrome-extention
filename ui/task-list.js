@@ -1,5 +1,4 @@
 import { html, render } from 'lit-html';
-import { virtualize } from '@lit-labs/virtualizer/virtualize.js';
 
 function getStatusEmoji(status) {
   switch (status.toLowerCase()) {
@@ -40,7 +39,22 @@ export function renderTaskList(tasksData, filters) {
   const container = document.createElement('div');
   container.className = 'tasktab-container';
 
-  const tasks = tasksData?.tasks || [];
+  let tasks = [];
+  let activeTag = null;
+
+  if (tasksData) {
+    if (Array.isArray(tasksData.tasks)) {
+      // Handle old, non-tagged format
+      tasks = tasksData.tasks;
+    } else {
+      // Handle new, tagged format. Use the first tag found.
+      const tagNames = Object.keys(tasksData);
+      if (tagNames.length > 0) {
+        activeTag = tagNames[0];
+        tasks = tasksData[activeTag]?.tasks || [];
+      }
+    }
+  }
 
   // Apply filters
   const filteredTasks = tasks
@@ -57,48 +71,42 @@ export function renderTaskList(tasksData, filters) {
     return a.id - b.id;
   });
 
-  const header = `
+  const tagHeader = activeTag ? `(from: ${activeTag})` : '';
+  
+  const headerTemplate = html`
     <div class="task-list-header">
-      <h2>Tasks (${sortedTasks.length}/${tasks.length})</h2>
+      <h2>Tasks ${tagHeader} (${sortedTasks.length}/${tasks.length})</h2>
       <div class="task-list-controls">
         <select id="tasktab-status-filter" class="form-select select-sm">
-          <option value="all" ${filters.status === 'all' ? 'selected' : ''}>All Statuses</option>
-          <option value="pending" ${filters.status === 'pending' ? 'selected' : ''}>Pending</option>
-          <option value="in-progress" ${filters.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
-          <option value="done" ${filters.status === 'done' ? 'selected' : ''}>Done</option>
+          <option value="all" ?selected=${filters.status === 'all'}>All Statuses</option>
+          <option value="pending" ?selected=${filters.status === 'pending'}>Pending</option>
+          <option value="in-progress" ?selected=${filters.status === 'in-progress'}>In Progress</option>
+          <option value="done" ?selected=${filters.status === 'done'}>Done</option>
         </select>
         <select id="tasktab-priority-filter" class="form-select select-sm">
-          <option value="all" ${filters.priority === 'all' ? 'selected' : ''}>All Priorities</option>
-          <option value="high" ${filters.priority === 'high' ? 'selected' : ''}>High</option>
-          <option value="medium" ${filters.priority === 'medium' ? 'selected' : ''}>Medium</option>
-          <option value="low" ${filters.priority === 'low' ? 'selected' : ''}>Low</option>
+          <option value="all" ?selected=${filters.priority === 'all'}>All Priorities</option>
+          <option value="high" ?selected=${filters.priority === 'high'}>High</option>
+          <option value="medium" ?selected=${filters.priority === 'medium'}>Medium</option>
+          <option value="low" ?selected=${filters.priority === 'low'}>Low</option>
         </select>
          <select id="tasktab-sortby" class="form-select select-sm">
-          <option value="id" ${filters.sortBy === 'id' ? 'selected' : ''}>Sort by ID</option>
-          <option value="priority" ${filters.sortBy === 'priority' ? 'selected' : ''}>Sort by Priority</option>
+          <option value="id" ?selected=${filters.sortBy === 'id'}>Sort by ID</option>
+          <option value="priority" ?selected=${filters.sortBy === 'priority'}>Sort by Priority</option>
         </select>
         <button id="tasktab-refresh-btn" class="btn-sm btn" aria-label="Refresh tasks">🔄</button>
       </div>
     </div>
   `;
-
-  if (sortedTasks.length === 0) {
-    container.innerHTML = header + '<p>No tasks match the current filters.</p>';
-    return container;
-  }
-
-  render(
-    html`
-      ${header}
+  
+  const bodyTemplate = sortedTasks.length === 0 
+    ? html`<p>No tasks match the current filters.</p>`
+    : html`
       <div class="task-list-body">
-        ${virtualize({
-          items: sortedTasks,
-          renderItem: renderTaskItem,
-        })}
+        ${sortedTasks.map(task => renderTaskItem(task))}
       </div>
-    `,
-    container
-  );
+    `;
+
+  render(html`${headerTemplate}${bodyTemplate}`, container);
   
   return container;
 }

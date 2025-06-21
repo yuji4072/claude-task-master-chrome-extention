@@ -1,6 +1,9 @@
 .tasktab-container {
   border-top: 1px solid #d0d7de;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  height: 80vh; /* Give the whole container a height to work with */
 }
 
 .task-list-header {
@@ -10,6 +13,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0; /* Prevent the header from shrinking */
 }
 
 .task-list-controls {
@@ -21,6 +25,12 @@
   font-size: 20px;
   font-weight: 600;
   margin: 0;
+}
+
+.task-list-body {
+  overflow-y: auto; /* The scroller */
+  flex-grow: 1; /* Allow the body to grow and fill available space */
+  position: relative; /* Needed for the virtualizer */
 }
 
 .task-item {
