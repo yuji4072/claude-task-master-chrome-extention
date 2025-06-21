@@ -1,0 +1,164 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Chrome Extension Project Structure",
+        "description": "Initialize Chrome Extension MV3 project with proper manifest and folder structure",
+        "details": "Create project directory with manifest.json (MV3), content_scripts folder, popup folder, and assets. Configure manifest with required permissions for GitHub access, content scripts for github.com, and proper extension metadata. Structure: /manifest.json, /content_scripts/, /popup/, /assets/, /utils/",
+        "testStrategy": "Verify extension loads in Chrome developer mode without errors, manifest validates against MV3 schema",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement GitHub DOM Detection and Tab Injection",
+        "description": "Create content script to detect GitHub repository pages and inject Tasks tab into navigation",
+        "details": "Content script should: 1) Detect GitHub repo pages via URL pattern, 2) Find .UnderlineNav navigation element, 3) Create and inject Tasks tab using .UnderlineNav-item class, 4) Handle dynamic page navigation (GitHub SPA behavior). Use MutationObserver to handle GitHub's PJAX navigation.",
+        "testStrategy": "Navigate to various GitHub repositories and verify Tasks tab appears in navigation bar, test with different repo layouts and private/public repos",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Implement .task.json File Detection and Fetching",
+        "description": "Create utility to fetch .task.json from GitHub repository main branch using raw URL",
+        "details": "Build fetch utility that: 1) Constructs GitHub raw URL from current repo (https://raw.githubusercontent.com/{owner}/{repo}/main/.task.json), 2) Handles fetch with proper error handling for 404/network issues, 3) Validates JSON structure matches expected task format, 4) Caches response to avoid excessive API calls",
+        "testStrategy": "Test with repos containing .task.json, repos without the file, private repos, and network failure scenarios",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Create Task List UI Component",
+        "description": "Build task list display component that renders tasks with status, priority, and title",
+        "details": "Create UI component using Vanilla JS that: 1) Renders task list in GitHub-styled container, 2) Shows id, title, status, priority for each task, 3) Uses emojis/colors for status (✅ done, ⏳ pending), 4) Applies priority styling (🔴 high, 🟡 medium, 🟢 low), 5) Handles empty state and loading state, 6) Matches GitHub's design system",
+        "testStrategy": "Test with various task.json files containing different statuses, priorities, and task counts. Verify styling matches GitHub's native components",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement Tab Click Handler and Content Rendering",
+        "description": "Handle Tasks tab clicks and render task list in GitHub's main content area",
+        "details": "Implement click handler that: 1) Intercepts Tasks tab clicks, 2) Clears #repo-content-pjax-container, 3) Renders task list component, 4) Updates URL hash for deep linking, 5) Handles browser back/forward navigation, 6) Shows loading state while fetching tasks",
+        "testStrategy": "Click Tasks tab and verify content renders in main area, test browser navigation, verify URL updates correctly",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Add Error Handling and Fallback States",
+        "description": "Implement comprehensive error handling for missing files, network issues, and invalid JSON",
+        "details": "Add error handling for: 1) .task.json not found (show 'No tasks file found' message), 2) Network failures (retry mechanism), 3) Invalid JSON format (show parsing error), 4) Empty task list (show empty state), 5) GitHub API rate limiting, 6) Private repo access issues",
+        "testStrategy": "Test all error scenarios: missing file, malformed JSON, network offline, private repos, and verify appropriate error messages display",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement Auto-refresh on Page Navigation",
+        "description": "Automatically refresh task data when navigating between GitHub pages or when .task.json updates",
+        "details": "Implement auto-refresh by: 1) Listening to GitHub's PJAX navigation events, 2) Re-fetching .task.json on page changes, 3) Updating task list if data changed, 4) Adding manual refresh button, 5) Implementing smart caching with timestamp checks",
+        "testStrategy": "Navigate between GitHub pages and verify tasks refresh, manually update .task.json in repo and verify changes reflect after page reload",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Add Task Filtering and Sorting",
+        "description": "Implement filtering by status and sorting by priority/id for better task management",
+        "details": "Add filtering controls: 1) Status filter dropdown (All, Pending, Done), 2) Priority filter (All, High, Medium, Low), 3) Sort options (ID, Priority, Title), 4) Search functionality for task titles, 5) Persist filter state in localStorage",
+        "testStrategy": "Test all filter combinations, verify search works correctly, check that filters persist across page reloads",
+        "priority": "low",
+        "dependencies": [
+          7
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Optimize Performance and Caching",
+        "description": "Implement efficient caching and performance optimizations for large task lists",
+        "details": "Performance optimizations: 1) Implement virtual scrolling for large task lists, 2) Cache .task.json with ETag/Last-Modified headers, 3) Debounce search input, 4) Lazy load task details, 5) Minimize DOM manipulations, 6) Add loading skeletons",
+        "testStrategy": "Test with large task lists (100+ tasks), measure load times, verify smooth scrolling and search performance",
+        "priority": "low",
+        "dependencies": [
+          8
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Add Extension Settings and Configuration",
+        "description": "Create settings page for configuring extension behavior and preferences",
+        "details": "Settings page with: 1) Toggle auto-refresh on/off, 2) Set refresh interval, 3) Choose default task file name (.task.json vs custom), 4) Theme preferences (match GitHub theme), 5) Export settings, 6) Reset to defaults option",
+        "testStrategy": "Test all settings persist correctly, verify theme changes apply immediately, test settings import/export functionality",
+        "priority": "low",
+        "dependencies": [
+          9
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Implement Comprehensive Testing Suite",
+        "description": "Create automated tests for all extension functionality and edge cases",
+        "details": "Test suite including: 1) Unit tests for utility functions, 2) Integration tests for GitHub DOM manipulation, 3) E2E tests using Puppeteer for full user flows, 4) Mock GitHub API responses, 5) Test different GitHub layouts and themes, 6) Performance benchmarks",
+        "testStrategy": "Run full test suite on multiple GitHub repositories, test with different Chrome versions, verify all user scenarios work correctly",
+        "priority": "medium",
+        "dependencies": [
+          10
+        ],
+        "status": "deferred",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Package and Deploy Extension",
+        "description": "Prepare extension for Chrome Web Store submission with proper packaging and documentation",
+        "details": "Deployment preparation: 1) Create extension package with proper icons and screenshots, 2) Write comprehensive README and user guide, 3) Create Chrome Web Store listing with descriptions, 4) Set up version management and update mechanism, 5) Add privacy policy and terms, 6) Test installation from .crx file",
+        "testStrategy": "Test extension installation from packaged file, verify all metadata displays correctly in Chrome extensions page, test auto-update mechanism",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-06-21T08:35:12.763Z",
+      "updated": "2025-06-21T09:36:36.216Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

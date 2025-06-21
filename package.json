@@ -1,0 +1,20 @@
+{
+  "name": "tasktab",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "package": "npm run build && cd dist && zip -r ../TaskTab.zip .",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.2.0",
+    "vite-plugin-css-injected-by-js": "^2.4.0"
+  },
+  "dependencies": {
+    "@lit-labs/virtualizer": "^2.1.0",
+    "lit-html": "^3.3.0"
+  }
+}

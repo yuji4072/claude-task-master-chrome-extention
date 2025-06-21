@@ -1,0 +1,62 @@
+# PRD: GitHub上にTask Masterタブを表示するChrome拡張機能
+
+## 🎯 概要
+GitHubリポジトリに `.task.json`（Task Master CLIで生成されるタスクリスト）をベースにした「Tasks」タブを追加するChrome拡張機能を開発する。これにより、開発者がGitHub上で現在のタスク状況を視覚的に把握できるようにする。
+
+---
+
+## 💡 目的
+- GitHubリポジトリに `Tasks` タブを追加し、Task Masterで管理している `.task.json` を可視化
+- `status`、`priority`、`title` をわかりやすく表示
+- GitHubにタブとして溶け込むUX
+- `.task.json` をCIで更新すれば常に最新のタスク一覧が見られるようにする
+
+---
+
+## ⚙ 想定機能（MVP）
+
+### ✅ タスク一覧表示機能
+- `.task.json` をGitHubの `main` ブランチから読み込む（raw URL）
+- タスクの `id`, `title`, `status`, `priority` をリスト表示
+- `pending` / `done` ステータスで絵文字 or 色分け
+
+### ✅ GitHubタブ注入
+- `content_script` により GitHub のナビゲーションに「Tasks」タブを追加
+- タブクリックで GitHubコンテンツ領域にタスク一覧を描画
+
+### ✅ 拡張の自動更新
+- リポジトリ内の `.task.json` が更新されるたびに、ページ読み込み時に自動反映
+
+---
+
+## 🧱 技術スタック
+
+| パーツ       | 技術候補                |
+|--------------|-------------------------|
+| UI           | Vanilla JS or React     |
+| 拡張構成     | Chrome Extension MV3    |
+| タスク取得   | GitHub raw URL + fetch  |
+| 開発補助     | `task-master` CLI で管理（本PRD） |
+
+---
+
+## 🧪 テスト戦略
+
+- GitHub上の `.task.json` を手動で更新 → 拡張で即時反映されることを確認
+- タスク数が多くてもスクロール・表示崩れしないことを確認
+- 表示されるタスクが `.task.json` と一致していることをテキスト比較で検証
+
+---
+
+## 🔗 参考リポジトリ／例
+
+- [task-master-ai](https://github.com/eyaltoledano/claude-task-master)
+- GitHub DOM構造（`.UnderlineNav-item`, `#repo-content-pjax-container` など）
+
+---
+
+## 📝 今後の拡張（MVP後）
+
+- タスクステータスをGitHub上で変更 → `.task.json` に反映（API or PR自動生成）
+- タスクにリンクをつけて `.taskmaster/docs/task-<id>.md` を参照
+- GitHub Issueとの双方向連携（将来的なZenHub的活用）

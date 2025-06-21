@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TaskTab Settings</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>TaskTab Settings</h1>
+    
+    <div class="setting-item">
+      <label for="cache-duration">
+        Cache Duration (minutes)
+      </label>
+      <input type="number" id="cache-duration" min="1" value="5">
+    </div>
+
+    <button id="save-btn" class="btn">Save Settings</button>
+    <div id="status-message"></div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
