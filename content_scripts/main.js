@@ -5,6 +5,7 @@ import taskListCss from '../ui/task-list.css?inline';
 console.log("TaskTab content script loaded");
 
 let tasksTab, counter;
+let isRendering = false;
 
 let filters = {
   status: 'all',
@@ -24,7 +25,9 @@ function saveFilters() {
 }
 
 function getRepoContentContainer() {
-  return document.querySelector('.repository-content');
+  // The main content area selector can differ between GitHub pages (e.g., code vs settings).
+  // Try the repo-specific one first, then fall back to the more generic <main> element.
+  return document.querySelector('.repository-content') || document.querySelector('main');
 }
 
 function clearRepoContentContainer() {
@@ -34,18 +37,21 @@ function clearRepoContentContainer() {
   }
 }
 
-function setActiveTab(active) {
+function setActiveTab() {
+  const isTasksPage = window.location.hash === '#tasks';
   if (tasksTab) {
-    if (active) {
+    if (isTasksPage) {
       tasksTab.classList.add('selected');
     } else {
       tasksTab.classList.remove('selected');
     }
   }
-  // De-select other tabs
+  // De-select other tabs if we are on the tasks page
   document.querySelectorAll('.UnderlineNav-item').forEach(item => {
     if (item !== tasksTab) {
-      item.classList.remove('selected');
+      if(isTasksPage) {
+        item.classList.remove('selected');
+      }
     }
   });
 }
@@ -56,71 +62,91 @@ async function handleRefreshClick() {
 }
 
 async function renderApp({ force = false } = {}) {
-  if (window.location.hash !== '#tasks') {
-    setActiveTab(false);
-    // Let GitHub handle rendering for non-task views
-    return;
-  }
-  
-  setActiveTab(true);
-  const mainContent = getRepoContentContainer();
-  if (!mainContent) return;
+  if (isRendering) return;
+  isRendering = true;
 
-  mainContent.appendChild(renderLoadingState());
-
-  const result = await fetchTasks({ force });
-  
-  clearRepoContentContainer();
-
-  let view;
-  if (result.error) {
-    view = renderErrorState(result.error);
-    counter.textContent = 'X';
-  } else {
-    view = renderTaskList(result.data, filters);
-    if (result.data && Array.isArray(result.data.tasks)) {
-      // The count in the header is now handled by renderTaskList
-    } else {
-      counter.textContent = '0';
+  try {
+    if (window.location.hash !== '#tasks') {
+      setActiveTab();
+      // On non-task views, we don't need to do anything with the content area.
+      // GitHub's router will handle it. We just need to ensure our tab is not selected.
+      return;
     }
-  }
-  mainContent.appendChild(view);
+    
+    setActiveTab();
+    const mainContent = getRepoContentContainer();
+    if (!mainContent) return;
 
-  // Add event listeners to controls
-  const statusFilter = view.querySelector('#tasktab-status-filter');
-  if (statusFilter) {
-    statusFilter.onchange = (e) => {
-      filters.status = e.target.value;
-      saveFilters();
-      renderApp();
-    };
-  }
+    clearRepoContentContainer();
 
-  const priorityFilter = view.querySelector('#tasktab-priority-filter');
-  if (priorityFilter) {
-    priorityFilter.onchange = (e) => {
-      filters.priority = e.target.value;
-      saveFilters();
-      renderApp();
-    };
-  }
+    mainContent.appendChild(renderLoadingState());
 
-  const sortBy = view.querySelector('#tasktab-sortby');
-  if (sortBy) {
-    sortBy.onchange = (e) => {
-      filters.sortBy = e.target.value;
-      saveFilters();
-      renderApp();
-    };
-  }
+    const result = await fetchTasks({ force });
+    
+    // We need to clear the container again to remove the loading state
+    clearRepoContentContainer();
 
-  const refreshBtn = view.querySelector('#tasktab-refresh-btn');
-  if (refreshBtn) {
-    refreshBtn.onclick = handleRefreshClick;
+    let view;
+    if (result.error) {
+      view = renderErrorState(result.error);
+    } else {
+      view = renderTaskList(result.data, filters);
+    }
+    mainContent.appendChild(view);
+
+    // Add event listeners to controls
+    const statusFilter = view.querySelector('#tasktab-status-filter');
+    if (statusFilter) {
+      statusFilter.onchange = (e) => {
+        filters.status = e.target.value;
+        saveFilters();
+        renderApp();
+      };
+    }
+
+    const priorityFilter = view.querySelector('#tasktab-priority-filter');
+    if (priorityFilter) {
+      priorityFilter.onchange = (e) => {
+        filters.priority = e.target.value;
+        saveFilters();
+        renderApp();
+      };
+    }
+
+    const sortBy = view.querySelector('#tasktab-sortby');
+    if (sortBy) {
+      sortBy.onchange = (e) => {
+        filters.sortBy = e.target.value;
+        saveFilters();
+        renderApp();
+      };
+    }
+
+    const refreshBtn = view.querySelector('#tasktab-refresh-btn');
+    if (refreshBtn) {
+      refreshBtn.onclick = handleRefreshClick;
+    }
+  } finally {
+    isRendering = false;
   }
 }
 
+function handleLinkClick(event) {
+  // We must stop the event from propagating to GitHub's own handlers
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+
+  history.pushState({}, '', event.currentTarget.href);
+  renderApp();
+}
+
 function injectTasksTab() {
+  // Check if we are in a repository context by looking for a specific meta tag.
+  if (!document.querySelector('meta[name="octolytics-dimension-repository_nwo"]')) {
+    return; // Not on a repo page, do nothing.
+  }
+
   const nav = document.querySelector('.UnderlineNav-body');
   if (!nav || document.querySelector('#tasktab-nav-item')) {
     return;
@@ -134,36 +160,49 @@ function injectTasksTab() {
   tasksTab.className = 'UnderlineNav-item';
   tasksTab.id = 'tasktab-nav-item';
   
-  const tasksLink = document.createElement('a');
-  tasksLink.href = '#tasks';
-  tasksLink.className = 'UnderlineNav-link';
-  tasksLink.textContent = 'Tasks';
+  // Construct the correct link to the repository root + #tasks
+  const repoMeta = document.querySelector('meta[name="octolytics-dimension-repository_nwo"]');
+  const repoPath = repoMeta ? `/${repoMeta.content}` : window.location.pathname.split('/').slice(0, 3).join('/');
   
-  counter = document.createElement('span');
-  counter.className = 'Counter';
-  counter.textContent = '...';
-  tasksLink.appendChild(counter);
-
+  const tasksLink = document.createElement('a');
+  tasksLink.href = `${repoPath}#tasks`;
+  tasksLink.className = 'UnderlineNav-link';
+  
+  // Add Octicon for visual consistency
+  const iconSvg = `<svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-check-circle UnderlineNav-octicon">
+    <path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16Zm3.78-9.72a.75.75 0 0 0-1.06-1.06L6.75 9.19 5.28 7.72a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"></path>
+  </svg>`;
+  
+  tasksLink.innerHTML = iconSvg + 'Tasks';
+  
   tasksTab.appendChild(tasksLink);
-  nav.appendChild(tasksTab);
+  
+  // Try to insert after "Pull requests" for a more natural position
+  const pullRequestsTab = nav.querySelector('a[data-selected-links~="repo_pulls"]');
+  if (pullRequestsTab && pullRequestsTab.parentElement) {
+    pullRequestsTab.parentElement.after(tasksTab);
+  } else {
+    nav.appendChild(tasksTab);
+  }
 
-  // Initial render based on hash
   renderApp();
 }
 
 function init() {
   loadFilters();
+  
   // Initial injection
   injectTasksTab();
   
-  // Listen for GitHub's dynamic navigation
-  const observer = new MutationObserver(() => {
+  // Listen for GitHub's turbo-frame navigation
+  document.addEventListener('turbo:load', () => {
+    // Re-inject the tab if it has been removed by GitHub's navigation
     injectTasksTab();
-    renderApp(); // This will use cache unless expired
+    // Re-render the app state, which will decide what to show based on the path
+    renderApp();
   });
-  observer.observe(document.body, { childList: true, subtree: true });
   
-  // Listen for hash changes for back/forward navigation
+  // Listen for popstate events for back/forward browser navigation
   window.addEventListener('hashchange', renderApp);
 }
 
