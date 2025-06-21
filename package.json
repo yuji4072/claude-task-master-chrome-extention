@@ -11,10 +11,10 @@
   },
   "devDependencies": {
     "vite": "^5.2.0",
-    "vite-plugin-css-injected-by-js": "^2.4.0"
+    "vite-plugin-css-injected-by-js": "^2.4.0",
+    "vite-plugin-static-copy": "^3.0.2"
   },
   "dependencies": {
-    "@lit-labs/virtualizer": "^2.1.0",
     "lit-html": "^3.3.0"
   }
 }

@@ -1,20 +1,33 @@
 import { defineConfig } from 'vite';
-import { resolve } from 'path';
-import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
-  plugins: [cssInjectedByJsPlugin()],
+  plugins: [
+    viteStaticCopy({
+      targets: [
+        {
+          src: 'manifest.json',
+          dest: '.'
+        },
+        {
+          src: 'assets',
+          dest: '.'
+        }
+      ]
+    })
+  ],
   build: {
-    outDir: 'dist',
     rollupOptions: {
       input: {
-        content: resolve(__dirname, 'content_scripts/main.js'),
-        popup: resolve(__dirname, 'popup/popup.html'),
+        'content': 'content_scripts/main.js',
+        'popup': 'popup/popup.html'
       },
       output: {
-        entryFileNames: '[name].js',
+        entryFileNames: chunkInfo => {
+          return chunkInfo.name === 'content' ? 'content.js' : 'popup/[name].js';
+        },
         chunkFileNames: 'chunks/[name].js',
-        assetFileNames: 'assets/[name].[ext]'
+        assetFileNames: 'popup/[name].[ext]'
       }
     }
   }
