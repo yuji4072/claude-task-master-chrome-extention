@@ -2,10 +2,8 @@
   "manifest_version": 3,
   "name": "Claude TaskMaster for GitHub",
   "version": "1.0.0",
-  "description": "Injects a 'Tasks' tab into GitHub repositories to display and manage tasks from a .task.json file.",
+  "description": "Injects a 'Tasks' tab into GitHub repositories to display and manage tasks from a tasks.json file.",
   "permissions": [
-    "activeTab",
-    "scripting",
     "storage"
   ],
   "host_permissions": [
